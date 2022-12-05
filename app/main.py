@@ -37,7 +37,7 @@ async def get_device_list():
 
 
 @app.post("/api/thermostat/off/")
-async def deactivate_thermostat():
+async def thermostat_off():
     body = {"command": "off"}
     thermostat_id = await get_device_id_by_name("thermostat")
     command = routes.COMMAND.replace("device_id", str(thermostat_id))
@@ -49,7 +49,7 @@ async def deactivate_thermostat():
 
 
 @app.post("/api/thermostat/cool/on/")
-async def activate_ac():
+async def ac_on():
     body = {"command": "cool"}
     thermostat_id = await get_device_id_by_name("thermostat")
     command = routes.COMMAND.replace("device_id", str(thermostat_id))
@@ -61,7 +61,7 @@ async def activate_ac():
 
 
 @app.post("/api/thermostat/cool/value/")
-async def set_cool_temperature_value(temp: models.ThermostatValue):
+async def set_ac_temperature_value(temp: models.ThermostatValue):
     body = {"command": "cool", "commandValue": temp.temperature_value}
     thermostat_id = await get_device_id_by_name("thermostat")
     command = routes.COMMAND.replace("device_id", str(thermostat_id))
@@ -73,7 +73,7 @@ async def set_cool_temperature_value(temp: models.ThermostatValue):
 
 
 @app.post("/api/thermostat/heat/on/")
-async def activate_heat():
+async def heat_on():
     body = {"command": "heat"}
     thermostat_id = await get_device_id_by_name("thermostat")
     command = routes.COMMAND.replace("device_id", str(thermostat_id))

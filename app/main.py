@@ -36,9 +36,9 @@ async def get_device_list():
         return res.json()
 
 
-@app.post("/api/thermostat/heat/on/")
-async def activate_heat():
-    body = {"command": "heat"}
+@app.post("/api/thermostat/off/")
+async def deactivate_thermostat():
+    body = {"command": "off"}
     thermostat_id = await get_device_id_by_name("thermostat")
     command = routes.COMMAND.replace("device_id", str(thermostat_id))
 
@@ -48,9 +48,33 @@ async def activate_heat():
         return res.json()
 
 
-@app.post("/api/thermostat/heat/off/")
-async def deactivate_heat():
-    body = {"command": "off"}
+@app.post("/api/thermostat/cool/on/")
+async def activate_ac():
+    body = {"command": "cool"}
+    thermostat_id = await get_device_id_by_name("thermostat")
+    command = routes.COMMAND.replace("device_id", str(thermostat_id))
+
+    async with httpx.AsyncClient() as client:
+        res = await client.post(url=f"{routes.DWELO_BASE_URL}{command}", headers=headers, json=body)
+        print(res.status_code)
+        return res.json()
+
+
+@app.post("/api/thermostat/cool/value/")
+async def set_cool_temperature_value(temp: models.ThermostatValue):
+    body = {"command": "cool", "commandValue": temp.temperature_value}
+    thermostat_id = await get_device_id_by_name("thermostat")
+    command = routes.COMMAND.replace("device_id", str(thermostat_id))
+
+    async with httpx.AsyncClient() as client:
+        res = await client.post(url=f"{routes.DWELO_BASE_URL}{command}", headers=headers, json=body)
+        print(res.status_code)
+        return res.json()
+
+
+@app.post("/api/thermostat/heat/on/")
+async def activate_heat():
+    body = {"command": "heat"}
     thermostat_id = await get_device_id_by_name("thermostat")
     command = routes.COMMAND.replace("device_id", str(thermostat_id))
 
@@ -72,9 +96,9 @@ async def set_heat_temperature_value(temp: models.ThermostatValue):
         return res.json()
 
 
-@app.post("/api/lighting/entryway/off/")
-async def turn_off_entry_way_light():
-    body = {"command": "off"}
+@app.post("/api/lighting/entryway/on/")
+async def turn_on_entry_way_light():
+    body = {"command": "on"}
     entry_way_id = await get_device_id_by_name("entry")
     command = routes.COMMAND.replace("device_id", str(entry_way_id))
 
@@ -84,9 +108,9 @@ async def turn_off_entry_way_light():
         return res.json()
 
 
-@app.post("/api/lighting/entryway/on/")
-async def turn_on_entry_way_light():
-    body = {"command": "on"}
+@app.post("/api/lighting/entryway/off/")
+async def turn_off_entry_way_light():
+    body = {"command": "off"}
     entry_way_id = await get_device_id_by_name("entry")
     command = routes.COMMAND.replace("device_id", str(entry_way_id))
 

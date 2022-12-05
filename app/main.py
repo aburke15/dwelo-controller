@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi import APIRouter
 import httpx
+from typing import Union
 from app import routes
 from app import models
 from app import secrets
@@ -12,7 +13,7 @@ router = APIRouter()
 headers = {"Authorization": secrets.TOKEN}
 
 
-@app.get("/api/login/")
+@app.post("/api/login/")
 async def login():
     # use secrets manager
     body = {
@@ -22,16 +23,15 @@ async def login():
     }
 
     async with httpx.AsyncClient() as client:
-        res = await client.post(url=f"{routes.DWELO_BASE}{routes.LOGIN}/", json=body)
+        res = await client.post(url=f"{routes.DWELO_BASE_URL}{routes.LOGIN}", json=body)
         print(res.status_code)
         return res.json()
 
 
 @app.get("/api/devicelist/")
 async def get_device_list():
-
     async with httpx.AsyncClient() as client:
-        res = await client.get(url=f"{routes.DWELO_BASE}{routes.DEVICE_LIST}", headers=headers)
+        res = await client.get(url=f"{routes.DWELO_BASE_URL}{routes.DEVICE_LIST}", headers=headers)
         print(res.status_code)
         return res.json()
 
@@ -39,11 +39,11 @@ async def get_device_list():
 @app.post("/api/thermostat/heat/on/")
 async def activate_heat():
     body = {"command": "heat"}
-
-    command = routes.COMMAND.replace("deviceId", str(192821))
+    thermostat_id = await get_device_id_by_name("thermostat")
+    command = routes.COMMAND.replace("device_id", str(thermostat_id))
 
     async with httpx.AsyncClient() as client:
-        res = await client.post(url=f"{routes.DWELO_BASE}{command}", headers=headers, json=body)
+        res = await client.post(url=f"{routes.DWELO_BASE_URL}{command}", headers=headers, json=body)
         print(res.status_code)
         return res.json()
 
@@ -51,70 +51,106 @@ async def activate_heat():
 @app.post("/api/thermostat/heat/off/")
 async def deactivate_heat():
     body = {"command": "off"}
-
-    command = routes.COMMAND.replace("deviceId", str(192821))
+    thermostat_id = await get_device_id_by_name("thermostat")
+    command = routes.COMMAND.replace("device_id", str(thermostat_id))
 
     async with httpx.AsyncClient() as client:
-        res = await client.post(url=f"{routes.DWELO_BASE}{command}", headers=headers, json=body)
+        res = await client.post(url=f"{routes.DWELO_BASE_URL}{command}", headers=headers, json=body)
         print(res.status_code)
         return res.json()
 
 
 @app.post("/api/thermostat/heat/value/")
 async def set_heat_temperature_value(temp: models.ThermostatValue):
-    print(temp.temperature_value)
     body = {"command": "heat", "commandValue": temp.temperature_value}
-
-    command = routes.COMMAND.replace("deviceId", str(192821))
+    thermostat_id = await get_device_id_by_name("thermostat")
+    command = routes.COMMAND.replace("device_id", str(thermostat_id))
 
     async with httpx.AsyncClient() as client:
-        res = await client.post(url=f"{routes.DWELO_BASE}{command}", headers=headers, json=body)
+        res = await client.post(url=f"{routes.DWELO_BASE_URL}{command}", headers=headers, json=body)
         print(res.status_code)
         return res.json()
 
 
-@app.get("/api/lighting/entryway/off/")
+@app.post("/api/lighting/entryway/off/")
 async def turn_off_entry_way_light():
     body = {"command": "off"}
-
-    command = routes.COMMAND.replace("deviceId", str(192819))
+    entry_way_id = await get_device_id_by_name("entry")
+    command = routes.COMMAND.replace("device_id", str(entry_way_id))
 
     async with httpx.AsyncClient() as client:
-        res = await client.post(url=f"{routes.DWELO_BASE}{command}", headers=headers, json=body)
+        res = await client.post(url=f"{routes.DWELO_BASE_URL}{command}", headers=headers, json=body)
         print(res.status_code)
         return res.json()
 
 
-@app.get("/api/lighting/entryway/on/")
+@app.post("/api/lighting/entryway/on/")
 async def turn_on_entry_way_light():
     body = {"command": "on"}
-
-    command = routes.COMMAND.replace("deviceId", str(192819))
+    entry_way_id = await get_device_id_by_name("entry")
+    command = routes.COMMAND.replace("device_id", str(entry_way_id))
 
     async with httpx.AsyncClient() as client:
-        res = await client.post(url=f"{routes.DWELO_BASE}{command}", headers=headers, json=body)
+        res = await client.post(url=f"{routes.DWELO_BASE_URL}{command}", headers=headers, json=body)
         print(res.status_code)
         return res.json()
 
 
-@app.get("/api/lighting/livingroom/on/")
+@app.post("/api/lighting/livingroom/on/")
 async def turn_on_living_room_light():
     body = {"command": "on"}
-
-    # TODO: move the device list to a db
-    data = await get_device_list()
-
-    devices = data["results"]
-
-    rooms = filter(
-        lambda device: "living" in device["givenName"].lower(), devices)
-
-    command = ''
-    for living_room in rooms:
-        print("ROOM:", living_room)
-        command = routes.COMMAND.replace("deviceId", str(living_room["uid"]))
+    living_room_id = await get_device_id_by_name("living")
+    command = routes.COMMAND.replace("device_id", str(living_room_id))
 
     async with httpx.AsyncClient() as client:
-        res = await client.post(url=f"{routes.DWELO_BASE}{command}", headers=headers, json=body)
+        res = await client.post(url=f"{routes.DWELO_BASE_URL}{command}", headers=headers, json=body)
         print(res.status_code)
         return res.json()
+
+
+@app.post("/api/lighting/livingroom/off/")
+async def turn_off_living_room_light():
+    body = {"command": "off"}
+    living_room_id = await get_device_id_by_name("living")
+    command = routes.COMMAND.replace("device_id", str(living_room_id))
+
+    async with httpx.AsyncClient() as client:
+        res = await client.post(url=f"{routes.DWELO_BASE_URL}{command}", headers=headers, json=body)
+        print(res.status_code)
+        return res.json()
+
+
+@app.post("/api/locks/frontdoor/lock/")
+async def lock_front_door():
+    body = {"command": "lock"}
+    front_door_id = await get_device_id_by_name("front")
+    command = routes.COMMAND.replace("device_id", str(front_door_id))
+
+    async with httpx.AsyncClient() as client:
+        res = await client.post(url=f"{routes.DWELO_BASE_URL}{command}", headers=headers, json=body)
+        print(res.status_code)
+        return res.json()
+
+
+@app.post("/api/locks/frontdoor/unlock/")
+async def unlock_front_door():
+    body = {"command": "unlock"}
+    front_door_id = await get_device_id_by_name("front")
+    command = routes.COMMAND.replace("device_id", str(front_door_id))
+
+    async with httpx.AsyncClient() as client:
+        res = await client.post(url=f"{routes.DWELO_BASE_URL}{command}", headers=headers, json=body)
+        print(res.status_code)
+        return res.json()
+
+
+async def get_device_id_by_name(name: str) -> Union[int, None]:
+    # TODO: move the device list to a db
+    device_list = await get_device_list()
+    devices = device_list["results"]
+    device = filter(lambda dev: name in dev["givenName"].lower(), devices)
+
+    for d in device:
+        return d["uid"]
+
+    return None
